@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}SciBot — AI Chatbot{% endblock %}
+
+{% block content %}
+<section class="chat-section" id="chatSection">
+  
+  <!-- ── Hero Section ── -->
+  <div class="hero-section">
+    <h1 class="hero-title">Your AI Science Lab</h1>
+    <p class="hero-subtitle">Ask SciBot anything about science experiments</p>
+  </div>
+
+  <!-- ── Optional Preferences Bar ── -->
+  <div class="preferences-bar" id="preferencesBar">
+    <div class="pref-label">🎯 Optional:</div>
+    <div class="pref-controls">
+      <select id="gradeSelect" class="pref-select">
+        <option value="">Any Grade</option>
+        <option value="grade6-8">Grade 6–8</option>
+        <option value="grade9-10">Grade 9–10</option>
+        <option value="grade11-12">Grade 11–12</option>
+        <option value="college">College</option>
+      </select>
+      <select id="subjectSelect" class="pref-select">
+        <option value="">Any Subject</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Biology">Biology</option>
+        <option value="Earth Science">Earth Science</option>
+      </select>
+      <!-- Context badge & clear button injected by JS -->
+    </div>
+  </div>
+
+  <!-- ── Chat Window ── -->
+  <div class="chat-window" id="chatWindow">
+    <!-- Welcome message -->
+    <div class="msg bot" id="welcomeMsg">
+      <div class="msg-avatar">🤖</div>
+      <div class="msg-bubble">
+        <p>Hey there, future scientist! 🔬 I'm <strong>SciBot</strong>.</p>
+        <p>Ask me about any science experiment — I'll walk you through the materials, steps, safety tips, and the science behind it!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Chat Input ── -->
+  <form class="chat-input-bar" id="chatForm" autocomplete="off">
+    <textarea id="chatInput" placeholder="Ask SciBot about a science experiment…" rows="1"></textarea>
+    <button type="submit" class="send-btn" id="sendBtn" aria-label="Send message">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M2 21l21-9L2 3v7l15 2-15 2z" fill="currentColor"/></svg>
+    </button>
+  </form>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Remove footer from chat page
+    const footer = document.getElementById("siteFooter");
+    if (footer) footer.remove();
+
+    // Hide hero section on first message
+    const chatForm   = document.getElementById("chatForm");
+    const heroSection = document.querySelector(".hero-section");
+    let isFirstMessage = true;
+
+    if (chatForm && heroSection) {
+      chatForm.addEventListener("submit", () => {
+        const input = document.getElementById("chatInput");
+        if (isFirstMessage && input.value.trim() !== "") {
+          isFirstMessage = false;
+          heroSection.style.transition = "all 0.4s ease";
+          heroSection.style.opacity = "0";
+          heroSection.style.transform = "translateY(-20px)";
+          setTimeout(() => { heroSection.style.display = "none"; }, 400);
+        }
+      });
+    }
+
+    // ── Context State (sessionStorage — resets on full page refresh) ──
+    const gradeSelect   = document.getElementById("gradeSelect");
+    const subjectSelect = document.getElementById("subjectSelect");
+
+    // Restore any preferences saved this session
+    const savedGrade   = sessionStorage.getItem("scibot-grade")   || "";
+    const savedSubject = sessionStorage.getItem("scibot-subject") || "";
+    if (gradeSelect)   gradeSelect.value   = savedGrade;
+    if (subjectSelect) subjectSelect.value = savedSubject;
+
+    // Inject context badge + clear button into the pref-controls row
+    const prefControls = document.querySelector(".pref-controls");
+    if (prefControls) {
+      const badge = document.createElement("span");
+      badge.id = "contextBadge";
+      badge.className = "pref-badge";
+      badge.style.display = "none";
+      prefControls.appendChild(badge);
+
+      const clearBtn = document.createElement("button");
+      clearBtn.id = "clearPrefsBtn";
+      clearBtn.className = "pref-clear-btn";
+      clearBtn.innerHTML = "✕ Clear";
+      clearBtn.title = "Reset preferences";
+      clearBtn.type = "button";
+      clearBtn.style.display = "none";
+      prefControls.appendChild(clearBtn);
+
+      clearBtn.addEventListener("click", () => {
+        gradeSelect.value   = "";
+        subjectSelect.value = "";
+        sessionStorage.removeItem("scibot-grade");
+        sessionStorage.removeItem("scibot-subject");
+        updateContextUI();
+      });
+    }
+
+    function updateContextUI() {
+      const grade    = gradeSelect   ? gradeSelect.value   : "";
+      const subject  = subjectSelect ? subjectSelect.value : "";
+      const badge    = document.getElementById("contextBadge");
+      const clearBtn = document.getElementById("clearPrefsBtn");
+      if (!badge || !clearBtn) return;
+
+      const parts = [];
+      if (grade)   parts.push(gradeSelect.options[gradeSelect.selectedIndex].text);
+      if (subject) parts.push(subject);
+
+      if (parts.length > 0) {
+        badge.textContent = "🟢 " + parts.join(" · ");
+        badge.style.display = "inline-flex";
+        clearBtn.style.display = "inline-flex";
+      } else {
+        badge.style.display = "none";
+        clearBtn.style.display = "none";
+      }
+    }
+
+    if (gradeSelect) {
+      gradeSelect.addEventListener("change", () => {
+        sessionStorage.setItem("scibot-grade", gradeSelect.value);
+        updateContextUI();
+      });
+    }
+    if (subjectSelect) {
+      subjectSelect.addEventListener("change", () => {
+        sessionStorage.setItem("scibot-subject", subjectSelect.value);
+        updateContextUI();
+      });
+    }
+
+    // Render badge for any restored values
+    updateContextUI();
+  });
+</script>
+{% endblock %}
