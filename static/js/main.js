@@ -86,6 +86,333 @@ document.addEventListener("DOMContentLoaded", () => {
   if (chatForm) {
     let history = [];
 
+    // ═══════════════════════════════════════════════════════════
+    //  SESSION HISTORY SYSTEM
+    // ═══════════════════════════════════════════════════════════
+    const HISTORY_KEY = "scibot-session-history";
+    const ACTIVE_KEY  = "scibot-active-session";
+
+    // Generate a unique session ID
+    function genSessionId() {
+      return "s_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    }
+
+    // Get all sessions from sessionStorage
+    function getSessions() {
+      try {
+        return JSON.parse(sessionStorage.getItem(HISTORY_KEY) || "[]");
+      } catch { return []; }
+    }
+
+    // Save sessions to sessionStorage
+    function saveSessions(sessions) {
+      sessionStorage.setItem(HISTORY_KEY, JSON.stringify(sessions));
+    }
+
+    // Generate a short title from the first user message
+    function generateTitle(msg) {
+      // Strip common greetings to find the real content
+      const cleaned = msg.replace(/^(hi|hey|hello|howdy|hola|greetings)[,!.?]?\s*/i, "").trim();
+      const text = cleaned.length > 5 ? cleaned : msg;
+      // Capitalize first letter and truncate
+      const title = text.charAt(0).toUpperCase() + text.slice(1);
+      return title.length > 40 ? title.slice(0, 37) + "…" : title;
+    }
+
+    // Check if a message is just a greeting (not meaningful enough to save)
+    function isGreetingOnly(messages) {
+      const userMessages = messages.filter(m => m.role === "user");
+      if (userMessages.length === 0) return true;
+      if (userMessages.length > 1) return false;
+      const greetingPattern = /^(hi|hey|hello|howdy|hola|greetings|yo|sup|what's up)[,!.?]?\s*$/i;
+      return greetingPattern.test(userMessages[0].content.trim());
+    }
+
+    // Format timestamp for display
+    function formatTime(ts) {
+      const d = new Date(ts);
+      const now = new Date();
+      const diff = now - d;
+      if (diff < 60000) return "Just now";
+      if (diff < 3600000) return Math.floor(diff / 60000) + "m ago";
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    // Current active session
+    let activeSessionId = sessionStorage.getItem(ACTIVE_KEY) || genSessionId();
+    sessionStorage.setItem(ACTIVE_KEY, activeSessionId);
+
+    // ── Sidebar DOM references ──
+    const sidebar       = document.getElementById("sessionSidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+    const sidebarToggle = document.getElementById("sidebarToggleBtn");
+    const sidebarClose  = document.getElementById("sidebarCloseBtn");
+    const newChatBtn    = document.getElementById("newChatBtn");
+    const historyList   = document.getElementById("historyList");
+    const historyEmpty  = document.getElementById("historyEmpty");
+    const sidebarGradeChip   = document.getElementById("sidebarGradeChip");
+    const sidebarSubjectChip = document.getElementById("sidebarSubjectChip");
+
+    function openSidebar() {
+      if (sidebar) sidebar.classList.add("open");
+      if (sidebarOverlay) sidebarOverlay.classList.add("active");
+      renderHistoryList();
+      updateSidebarPrefs();
+    }
+
+    function closeSidebar() {
+      if (sidebar) sidebar.classList.remove("open");
+      if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+    }
+
+    if (sidebarToggle) sidebarToggle.addEventListener("click", () => {
+      if (sidebar && sidebar.classList.contains("open")) closeSidebar();
+      else openSidebar();
+    });
+    if (sidebarClose) sidebarClose.addEventListener("click", closeSidebar);
+    if (sidebarOverlay) sidebarOverlay.addEventListener("click", closeSidebar);
+
+    // Close sidebar on Escape
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && sidebar && sidebar.classList.contains("open")) closeSidebar();
+    });
+
+    // ── Save current session to history ──
+    function saveCurrentSession() {
+      if (history.length === 0 || isGreetingOnly(history)) return;
+
+      const sessions = getSessions();
+      const existing = sessions.findIndex(s => s.id === activeSessionId);
+      const firstUserMsg = history.find(m => m.role === "user");
+      const title = firstUserMsg ? generateTitle(firstUserMsg.content) : "New Chat";
+
+      const session = {
+        id: activeSessionId,
+        title: title,
+        timestamp: existing >= 0 ? sessions[existing].timestamp : Date.now(),
+        updatedAt: Date.now(),
+        messages: [...history],
+      };
+
+      if (existing >= 0) {
+        sessions[existing] = session;
+      } else {
+        sessions.unshift(session);
+      }
+
+      // Keep max 20 sessions
+      while (sessions.length > 20) sessions.pop();
+      saveSessions(sessions);
+    }
+
+    // ── Render history list in sidebar ──
+    function renderHistoryList() {
+      if (!historyList) return;
+
+      const sessions = getSessions();
+      // Clear except empty state
+      const items = historyList.querySelectorAll(".sidebar-history-item");
+      items.forEach(el => el.remove());
+
+      if (sessions.length === 0) {
+        if (historyEmpty) historyEmpty.style.display = "flex";
+        return;
+      }
+      if (historyEmpty) historyEmpty.style.display = "none";
+
+      sessions.forEach((session, idx) => {
+        const item = document.createElement("div");
+        item.className = "sidebar-history-item" + (session.id === activeSessionId ? " active" : "");
+        item.style.animationDelay = `${idx * 0.05}s`;
+
+        item.innerHTML = `
+          <span class="sidebar-history-icon">${session.id === activeSessionId ? "💬" : "🗂️"}</span>
+          <div class="sidebar-history-info">
+            <div class="sidebar-history-title">${escapeHtml(session.title)}</div>
+            <div class="sidebar-history-time">${formatTime(session.updatedAt || session.timestamp)}</div>
+          </div>
+          <button class="sidebar-history-delete" title="Delete this chat" data-sid="${session.id}">✕</button>
+        `;
+
+        // Click to load session
+        item.addEventListener("click", (e) => {
+          if (e.target.closest(".sidebar-history-delete")) return;
+          loadSession(session.id);
+          closeSidebar();
+        });
+
+        // Delete button
+        const delBtn = item.querySelector(".sidebar-history-delete");
+        if (delBtn) {
+          delBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteSession(session.id);
+          });
+        }
+
+        historyList.appendChild(item);
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ── Load a session from history ──
+    function loadSession(sessionId) {
+      // Save current session first
+      saveCurrentSession();
+
+      const sessions = getSessions();
+      const session = sessions.find(s => s.id === sessionId);
+      if (!session) return;
+
+      // Set as active
+      activeSessionId = sessionId;
+      sessionStorage.setItem(ACTIVE_KEY, activeSessionId);
+
+      // Restore messages
+      history = [...session.messages];
+
+      // Clear chat window
+      chatWindow.innerHTML = "";
+
+      // Re-render welcome message
+      const welcomeMsg = document.createElement("div");
+      welcomeMsg.className = "msg bot";
+      welcomeMsg.id = "welcomeMsg";
+      welcomeMsg.innerHTML = `
+        <div class="msg-avatar">🤖</div>
+        <div class="msg-bubble">
+          <p>Hey there, future scientist! 🔬 I'm <strong>SciBot</strong>.</p>
+          <p>Ask me about any science experiment — I'll walk you through the materials, steps, safety tips, and the science behind it!</p>
+        </div>`;
+      chatWindow.appendChild(welcomeMsg);
+
+      // Replay messages
+      for (const msg of history) {
+        appendMessage(msg.role === "assistant" ? "bot" : msg.role, msg.content);
+      }
+
+      // Hide hero on restored sessions with messages
+      const heroSection = document.querySelector(".hero-section");
+      if (heroSection && history.length > 0) {
+        heroSection.style.display = "none";
+        heroSection.style.opacity = "0";
+      }
+
+      scrollChat();
+      renderHistoryList();
+    }
+
+    // ── Delete a session from history ──
+    function deleteSession(sessionId) {
+      let sessions = getSessions();
+      sessions = sessions.filter(s => s.id !== sessionId);
+      saveSessions(sessions);
+
+      // If we deleted the active session, start fresh
+      if (sessionId === activeSessionId) {
+        startNewChat();
+      }
+      renderHistoryList();
+    }
+
+    // ── New Chat ──
+    function startNewChat() {
+      // Save current session
+      saveCurrentSession();
+
+      // Reset
+      history = [];
+      activeSessionId = genSessionId();
+      sessionStorage.setItem(ACTIVE_KEY, activeSessionId);
+
+      // Clear chat window
+      chatWindow.innerHTML = "";
+      const welcomeMsg = document.createElement("div");
+      welcomeMsg.className = "msg bot";
+      welcomeMsg.id = "welcomeMsg";
+      welcomeMsg.innerHTML = `
+        <div class="msg-avatar">🤖</div>
+        <div class="msg-bubble">
+          <p>Hey there, future scientist! 🔬 I'm <strong>SciBot</strong>.</p>
+          <p>Ask me about any science experiment — I'll walk you through the materials, steps, safety tips, and the science behind it!</p>
+        </div>`;
+      chatWindow.appendChild(welcomeMsg);
+
+      // Show hero section again
+      const heroSection = document.querySelector(".hero-section");
+      if (heroSection) {
+        heroSection.style.display = "";
+        heroSection.style.opacity = "1";
+        heroSection.style.transform = "translateY(0)";
+      }
+
+      // Reset nudge state
+      userMsgCount = 0;
+
+      renderHistoryList();
+      chatInput.focus();
+    }
+
+    if (newChatBtn) newChatBtn.addEventListener("click", () => {
+      startNewChat();
+      closeSidebar();
+    });
+
+    // ── Update sidebar preferences display ──
+    function updateSidebarPrefs() {
+      const grade   = sessionStorage.getItem("scibot-grade")   || "";
+      const subject = sessionStorage.getItem("scibot-subject") || "";
+
+      if (sidebarGradeChip) {
+        if (grade) {
+          const labels = { "grade6-8": "6–8", "grade9-10": "9–10", "grade11-12": "11–12", "college": "College" };
+          sidebarGradeChip.textContent = "Grade: " + (labels[grade] || grade);
+          sidebarGradeChip.classList.add("active-pref");
+        } else {
+          sidebarGradeChip.textContent = "Grade: Any";
+          sidebarGradeChip.classList.remove("active-pref");
+        }
+      }
+      if (sidebarSubjectChip) {
+        if (subject) {
+          sidebarSubjectChip.textContent = "Subject: " + subject;
+          sidebarSubjectChip.classList.add("active-pref");
+        } else {
+          sidebarSubjectChip.textContent = "Subject: Any";
+          sidebarSubjectChip.classList.remove("active-pref");
+        }
+      }
+    }
+
+    // Sync sidebar prefs when selects change
+    if (gradeSelect) gradeSelect.addEventListener("change", updateSidebarPrefs);
+    if (subjectSelect) subjectSelect.addEventListener("change", updateSidebarPrefs);
+
+    // ── Restore active session on page load ──
+    (function restoreActiveSession() {
+      const sessions = getSessions();
+      const active = sessions.find(s => s.id === activeSessionId);
+      if (active && active.messages.length > 0) {
+        history = [...active.messages];
+        // Replay messages into chat window
+        for (const msg of history) {
+          appendMessage(msg.role === "assistant" ? "bot" : msg.role, msg.content);
+        }
+        // Hide hero
+        const heroSection = document.querySelector(".hero-section");
+        if (heroSection) {
+          heroSection.style.display = "none";
+          heroSection.style.opacity = "0";
+        }
+        scrollChat();
+      }
+    })();
+
     // ── Context state helpers (sessionStorage — resets on page refresh) ──
     const ALLOWED_GRADES   = new Set(["grade6-8", "grade9-10", "grade11-12", "college"]);
     const ALLOWED_SUBJECTS = new Set(["Physics", "Chemistry", "Biology", "Earth Science"]);
@@ -217,6 +544,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         history.push({ role: "assistant", content: fullReply });
+
+        // Save session to history after each bot reply
+        saveCurrentSession();
 
         // Maybe nudge user to set preferences (only if not set, only once)
         maybeShowNudge();
@@ -575,8 +905,197 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ════════════════════════════════════════════════════════════
-  //  INGREDIENT LAB
+  //  INGREDIENT LAB — Hybrid Recommendation System
   // ════════════════════════════════════════════════════════════
+
+  // ── Predefined Experiment Dataset ──
+  const PREDEFINED_EXPERIMENTS = [
+    {
+      name: "Volcano Eruption", emoji: "🌋", category: "Chemistry", difficulty: "Beginner",
+      keywords: ["baking soda", "vinegar", "dish soap", "food coloring", "bottle", "plastic bottle", "tray"],
+      description: "Create a dramatic foamy eruption using an acid-base reaction between baking soda and vinegar.",
+      materials: ["Baking soda", "Vinegar", "Dish soap", "Food coloring", "Plastic bottle", "Tray"],
+      steps: ["Place bottle on a tray.", "Add 2 tbsp baking soda.", "Add dish soap and food coloring.", "Pour vinegar in and watch the eruption!"],
+      safety: ["Keep vinegar away from eyes.", "Do outdoors or on a washable surface."],
+      science: "Vinegar (acetic acid) reacts with baking soda (sodium bicarbonate) producing CO₂ gas, which creates the foamy eruption."
+    },
+    {
+      name: "Invisible Ink", emoji: "🔍", category: "Chemistry", difficulty: "Beginner",
+      keywords: ["lemon", "lemon juice", "cotton swab", "paper", "white paper", "lamp", "iron"],
+      description: "Write secret messages with lemon juice that only appear when heated.",
+      materials: ["Lemon juice", "Cotton swab", "White paper", "Lamp or iron"],
+      steps: ["Dip cotton swab in lemon juice.", "Write a message on paper.", "Let dry completely.", "Hold near a warm lamp to reveal."],
+      safety: ["Adult supervision for heat source.", "Keep paper away from direct flame."],
+      science: "Lemon juice is an organic acid that oxidizes and turns brown when heated, revealing the hidden writing."
+    },
+    {
+      name: "Static Electricity Butterfly", emoji: "🦋", category: "Physics", difficulty: "Beginner",
+      keywords: ["tissue paper", "tissue", "balloon", "scissors", "wool", "sweater", "wool sweater"],
+      description: "Make a tissue paper butterfly fly using static electricity from a balloon.",
+      materials: ["Tissue paper", "Balloon", "Scissors", "Wool sweater"],
+      steps: ["Cut a butterfly from tissue paper.", "Inflate the balloon.", "Rub balloon on wool.", "Hold near the butterfly to make it fly."],
+      safety: ["Keep away from electronics.", "Don't over-inflate the balloon."],
+      science: "Rubbing transfers electrons to the balloon, creating a static charge that attracts the lightweight tissue paper."
+    },
+    {
+      name: "Rainbow Walking Water", emoji: "🌈", category: "Physics", difficulty: "Beginner",
+      keywords: ["cups", "cup", "water", "food coloring", "paper towel", "paper towels"],
+      description: "Watch colored water 'walk' between cups via paper towel bridges using capillary action.",
+      materials: ["6 cups", "Water", "Food coloring (red, yellow, blue)", "Paper towels"],
+      steps: ["Fill alternate cups with colored water.", "Leave others empty.", "Bridge cups with paper towel strips.", "Watch colors walk and mix!"],
+      safety: ["Use food-grade coloring.", "Lay newspaper under cups."],
+      science: "Capillary action pulls water through the tiny gaps in paper towel fibers, defying gravity."
+    },
+    {
+      name: "Density Tower", emoji: "🗼", category: "Physics", difficulty: "Intermediate",
+      keywords: ["honey", "corn syrup", "dish soap", "water", "vegetable oil", "oil", "rubbing alcohol", "alcohol", "glass"],
+      description: "Layer liquids of different densities to create a colorful tower in a glass.",
+      materials: ["Honey", "Corn syrup", "Dish soap", "Water", "Vegetable oil", "Rubbing alcohol", "Tall glass"],
+      steps: ["Pour honey first.", "Layer corn syrup, dish soap.", "Add colored water.", "Gently add oil and alcohol."],
+      safety: ["Rubbing alcohol is flammable — keep away from heat.", "Don't drink any liquids."],
+      science: "Each liquid has a different density. Denser liquids sink; less dense ones float, creating visible layers."
+    },
+    {
+      name: "DNA Extraction", emoji: "🧬", category: "Biology", difficulty: "Intermediate",
+      keywords: ["strawberry", "strawberries", "dish soap", "salt", "rubbing alcohol", "alcohol", "zip-lock bag", "bag", "coffee filter", "filter", "cup"],
+      description: "Extract real DNA from strawberries that you can see with the naked eye.",
+      materials: ["Strawberries", "Dish soap", "Salt", "Rubbing alcohol (cold)", "Zip-lock bag", "Coffee filter", "Cup"],
+      steps: ["Mash strawberries in bag.", "Add salt, dish soap, water.", "Strain through filter.", "Add cold alcohol — DNA appears!"],
+      safety: ["Use cold alcohol from the fridge.", "Handle alcohol away from flames."],
+      science: "Soap breaks cell membranes, salt clumps proteins, and alcohol precipitates DNA out of solution."
+    },
+    {
+      name: "Crystal Growing", emoji: "💎", category: "Chemistry", difficulty: "Intermediate",
+      keywords: ["sugar", "alum", "hot water", "water", "glass jar", "jar", "string", "pencil", "thread"],
+      description: "Grow beautiful geometric crystals over several days from a supersaturated solution.",
+      materials: ["Sugar or alum", "Hot water", "Glass jar", "String", "Pencil"],
+      steps: ["Dissolve sugar/alum in hot water.", "Pour into jar.", "Suspend string from pencil.", "Wait 3–7 days for crystals!"],
+      safety: ["Use oven mitts for hot water.", "Avoid splashing alum solution."],
+      science: "As water evaporates, molecules arrange into a repeating lattice structure — a crystal."
+    },
+    {
+      name: "Fermentation Lab", emoji: "🍞", category: "Biology", difficulty: "Advanced",
+      keywords: ["yeast", "sugar", "warm water", "water", "balloon", "plastic bottle", "bottle"],
+      description: "Watch yeast produce CO₂ gas that inflates a balloon through fermentation.",
+      materials: ["Active dry yeast", "Sugar", "Warm water", "Balloon", "Plastic bottle"],
+      steps: ["Add warm water and sugar to bottle.", "Add yeast and swirl.", "Stretch balloon over opening.", "Watch it inflate in 20–30 min!"],
+      safety: ["Use warm, NOT hot water (under 45°C).", "Don't inhale from the balloon."],
+      science: "Yeast performs anaerobic respiration, consuming sugar and producing CO₂ and ethanol."
+    },
+    {
+      name: "Milk Color Explosion", emoji: "🥛", category: "Chemistry", difficulty: "Beginner",
+      keywords: ["milk", "food coloring", "dish soap", "cotton swab", "plate", "shallow plate"],
+      description: "Create a stunning color explosion in milk using dish soap and food coloring.",
+      materials: ["Whole milk", "Food coloring", "Dish soap", "Cotton swab", "Shallow plate"],
+      steps: ["Pour milk into a plate.", "Add drops of food coloring.", "Dip cotton swab in dish soap.", "Touch the milk and watch colors explode!"],
+      safety: ["Use whole milk for best results.", "Don't drink the milk after."],
+      science: "Dish soap breaks down fat molecules in milk, causing turbulence that swirls the food coloring around."
+    },
+    {
+      name: "Lemon Battery", emoji: "🔋", category: "Physics", difficulty: "Intermediate",
+      keywords: ["lemon", "copper", "copper wire", "copper coin", "nail", "zinc nail", "wire", "led", "light"],
+      description: "Generate electricity from lemons to power a small LED light.",
+      materials: ["Lemons (2–3)", "Copper coins or wire", "Zinc nails", "Small LED", "Wire clips"],
+      steps: ["Insert a copper coin and zinc nail into each lemon.", "Connect lemons in series with wire.", "Attach the LED to the end wires.", "Watch it glow!"],
+      safety: ["Don't eat the lemons after.", "Handle wires carefully."],
+      science: "The acid in lemon juice reacts with the two metals, creating a flow of electrons — an electrochemical cell."
+    },
+    {
+      name: "Egg Drop Challenge", emoji: "🥚", category: "Physics", difficulty: "Intermediate",
+      keywords: ["egg", "straw", "straws", "tape", "cotton", "bubble wrap", "cardboard", "newspaper", "paper"],
+      description: "Engineer a protective container to keep an egg from breaking during a drop.",
+      materials: ["Raw egg", "Straws", "Tape", "Cotton balls or bubble wrap", "Cardboard"],
+      steps: ["Design a protective frame with straws and tape.", "Cushion the egg with cotton/bubble wrap.", "Seal inside cardboard.", "Drop from height and check!"],
+      safety: ["Do outdoors for easy cleanup.", "Wash hands after handling raw egg."],
+      science: "Cushioning materials absorb kinetic energy on impact, decelerating the egg gradually instead of abruptly."
+    },
+    {
+      name: "Homemade Slime", emoji: "🟢", category: "Chemistry", difficulty: "Beginner",
+      keywords: ["glue", "borax", "water", "food coloring", "bowl", "pva glue", "white glue"],
+      description: "Make stretchy, gooey slime by cross-linking PVA glue polymers with borax.",
+      materials: ["White PVA glue", "Borax powder", "Water", "Food coloring", "Bowl"],
+      steps: ["Mix glue and water in bowl.", "Add food coloring.", "Dissolve borax in warm water separately.", "Pour borax solution into glue and stir until slime forms!"],
+      safety: ["Don't eat slime.", "Wash hands after playing.", "Borax can irritate skin — use small amounts."],
+      science: "Borax ions cross-link the long PVA polymer chains, turning liquid glue into a stretchy, non-Newtonian fluid."
+    },
+    {
+      name: "Solar Oven", emoji: "☀️", category: "Earth Science", difficulty: "Intermediate",
+      keywords: ["cardboard box", "box", "aluminum foil", "foil", "plastic wrap", "tape", "black paper", "paper"],
+      description: "Build a solar oven from a cardboard box to cook s'mores using sunlight.",
+      materials: ["Cardboard box", "Aluminum foil", "Plastic wrap", "Tape", "Black paper"],
+      steps: ["Cut a flap in the box lid.", "Line inside with foil.", "Cover opening with plastic wrap.", "Place food inside on black paper in sunlight."],
+      safety: ["Contents get hot — use oven mitts.", "Only use on sunny days."],
+      science: "Foil reflects sunlight inward, black paper absorbs heat, and plastic wrap traps it — creating a greenhouse effect."
+    },
+    {
+      name: "Tornado in a Bottle", emoji: "🌪️", category: "Physics", difficulty: "Beginner",
+      keywords: ["bottle", "plastic bottle", "water", "dish soap", "glitter", "tape", "two bottles"],
+      description: "Create a swirling vortex inside a bottle by spinning water.",
+      materials: ["2 plastic bottles", "Water", "Dish soap", "Glitter (optional)", "Tape"],
+      steps: ["Fill one bottle 2/3 with water.", "Add a drop of soap and glitter.", "Tape bottles mouth-to-mouth.", "Flip and swirl in a circle!"],
+      safety: ["Tape bottles securely to avoid leaks.", "Do near a sink."],
+      science: "Swirling creates a vortex — centripetal force pushes water outward while air rushes up the center, just like a real tornado."
+    },
+    {
+      name: "Oobleck — Non-Newtonian Fluid", emoji: "🫠", category: "Physics", difficulty: "Beginner",
+      keywords: ["cornstarch", "corn starch", "water", "bowl", "food coloring", "spoon"],
+      description: "Make a bizarre fluid that acts solid when hit but liquid when poured.",
+      materials: ["Cornstarch", "Water", "Bowl", "Food coloring (optional)"],
+      steps: ["Mix 2 cups cornstarch with 1 cup water.", "Add food coloring if desired.", "Punch it — it's solid! Pour it — it's liquid!", "Experiment with speed of force."],
+      safety: ["Don't pour down the drain — it clogs pipes.", "Clean up with warm water."],
+      science: "Cornstarch particles jam together under sudden force, acting solid. Released slowly, they flow as a liquid — a non-Newtonian fluid."
+    }
+  ];
+
+  // ── Input Normalization ──
+  function normalizeInputMaterials(raw) {
+    return [...new Set(
+      raw.toLowerCase()
+        .split(/[,;]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+    )];
+  }
+
+  // ── Material Matching Engine ──
+  function findCuratedMatches(userMaterials) {
+    const scored = PREDEFINED_EXPERIMENTS.map(exp => {
+      let matchCount = 0;
+      const matchedKeywords = [];
+      for (const kw of exp.keywords) {
+        for (const um of userMaterials) {
+          if (kw.includes(um) || um.includes(kw)) {
+            matchCount++;
+            matchedKeywords.push(kw);
+            break;
+          }
+        }
+      }
+      return { exp, matchCount, matchedKeywords };
+    });
+
+    return scored
+      .filter(s => s.matchCount >= 2)
+      .sort((a, b) => b.matchCount - a.matchCount)
+      .slice(0, 4);
+  }
+
+  // ── Convert curated experiment to markdown card content ──
+  function curatedToMarkdown(match) {
+    const exp = match.exp;
+    let md = `## ${exp.emoji} ${exp.name}\n\n`;
+    md += `*${exp.description}*\n\n`;
+    md += `**Difficulty:** ${exp.difficulty} · **Category:** ${exp.category}\n\n`;
+    md += `**Materials Used:**\n`;
+    exp.materials.forEach(m => { md += `- ${m}\n`; });
+    md += `\n**Step-by-Step Instructions:**\n`;
+    exp.steps.forEach((s, i) => { md += `${i + 1}. ${s}\n`; });
+    md += `\n**Safety Precautions:**\n`;
+    exp.safety.forEach(s => { md += `- ${s}\n`; });
+    md += `\n**The Science:**\n${exp.science}\n`;
+    return md;
+  }
+
   const ingInput = document.getElementById("ingredientInput");
   if(ingInput) {
     const placeholders = [
@@ -594,9 +1113,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const ingForm = document.getElementById("ingredientForm");
   if (ingForm) {
-    // Store all 4 experiments and track current index
     let allExperiments = [];
     let currentExpIndex = 0;
+    let resultSource = "ai"; // "curated" or "ai"
 
     ingForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -617,6 +1136,27 @@ document.addEventListener("DOMContentLoaded", () => {
       allExperiments = [];
       currentExpIndex = 0;
 
+      // ── Step 1: Normalize input ──
+      const userMaterials = normalizeInputMaterials(materials);
+
+      // ── Step 2: Try curated matches first ──
+      const curatedMatches = findCuratedMatches(userMaterials);
+
+      if (curatedMatches.length > 0) {
+        // ── Curated path — instant, no API call ──
+        resultSource = "curated";
+        allExperiments = curatedMatches.map(m => curatedToMarkdown(m));
+        currentExpIndex = 0;
+        showExperiment(currentExpIndex);
+        results.classList.remove("hidden");
+        submitBtn.disabled = false;
+        btnText.classList.remove("hidden");
+        btnLoader.classList.add("hidden");
+        return;
+      }
+
+      // ── Step 3: Fallback to Groq API ──
+      resultSource = "ai";
       const temperature = parseFloat(
         document.getElementById("ingTempSlider")?.value ?? 0.7
       );
@@ -633,7 +1173,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
-        // Split by the strict markers
         const rawText = data.response;
         const parts = rawText
           .split(/---EXPERIMENT_\d+---/)
@@ -643,7 +1182,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (parts.length >= 2) {
           allExperiments = parts.slice(0, 4);
         } else {
-          // Fallback split if model didn't follow format
           const fallback = rawText.split(
             /(?=#{1,4}\s*Experiment\s*[1234])/i
           ).map(p => p.trim()).filter(p => p.length > 20);
@@ -674,12 +1212,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const counterEl = document.getElementById("expCounter");
       const total     = allExperiments.length;
 
-      // Clean content — remove heading marker if present
       const content = allExperiments[index]
         .replace(/^#{1,4}\s*Experiment\s*\d+[:\-]?\s*/i, "")
         .trim();
 
-      // Animate out then in
+      // Source badge HTML
+      const badgeClass = resultSource === "curated" ? "source-badge-curated" : "source-badge-ai";
+      const badgeText  = resultSource === "curated" ? "⚡ Curated Recommendation" : "🤖 AI Generated";
+
       cardEl.style.opacity = "0";
       cardEl.style.transform = "translateY(10px)";
 
@@ -690,6 +1230,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="result-card-number">
                 Experiment ${index + 1} of ${total}
               </div>
+              <span class="source-badge ${badgeClass}">${badgeText}</span>
               <div class="exp-dots">
                 ${allExperiments.map((_, i) => `
                   <span class="exp-dot ${i === index ? 'active' : ''}"
@@ -700,11 +1241,9 @@ document.addEventListener("DOMContentLoaded", () => {
             ${renderMarkdownSimple(content)}
           </div>`;
 
-        // Update counter
         if (counterEl) counterEl.textContent =
           `${index + 1} / ${total}`;
 
-        // Update shuffle button state
         const shuffleBtn = document.getElementById("shuffleBtn");
         if (shuffleBtn) {
           const nextIdx = (index + 1) % total;

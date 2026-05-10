@@ -2,6 +2,45 @@
 {% block title %}SciBot — AI Chatbot{% endblock %}
 
 {% block content %}
+<!-- ── Sidebar Overlay (mobile) ── -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ── Session History Sidebar ── -->
+<aside class="session-sidebar" id="sessionSidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-title">🧠 Session History</span>
+    <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close sidebar">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <!-- New Chat Button -->
+  <button class="sidebar-new-chat-btn" id="newChatBtn">
+    <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    New Chat
+  </button>
+
+  <!-- History List -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Recent Chats</div>
+    <div class="sidebar-history-list" id="historyList">
+      <div class="sidebar-empty" id="historyEmpty">
+        <span class="sidebar-empty-icon">💬</span>
+        <span>No chats yet this session</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preferences Summary -->
+  <div class="sidebar-section sidebar-prefs-section">
+    <div class="sidebar-section-label">⚙️ Preferences</div>
+    <div class="sidebar-prefs-summary" id="sidebarPrefsSummary">
+      <span class="sidebar-pref-chip" id="sidebarGradeChip">Grade: Any</span>
+      <span class="sidebar-pref-chip" id="sidebarSubjectChip">Subject: Any</span>
+    </div>
+  </div>
+</aside>
+
 <section class="chat-section" id="chatSection">
   
   <!-- ── Hero Section ── -->
