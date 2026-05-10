@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}SciBot — Guided Experiment{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Reuse ALL experiment detail styles ── */
+  .detail-hero { text-align: center; padding: 2rem 1rem 1rem; position: relative; max-width: 800px; margin: 0 auto; }
+  .detail-emoji { font-size: 4.5rem; margin-bottom: 1rem; display: inline-block; animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes bounceIn { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+  .detail-title { font-family: var(--font-heading); font-size: clamp(1.8rem, 4vw, 2.8rem); margin-bottom: 0.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+  .detail-badges { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 2rem; }
+
+  .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; max-width: 900px; margin: 0 auto 3rem; padding: 0 1rem; }
+  .stat-card { background: var(--bg-card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.5rem; text-align: center; backdrop-filter: blur(14px); }
+  .stat-value { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-top: 0.5rem; }
+  .stat-label { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+
+  .content-section { max-width: 800px; margin: 0 auto 5rem; padding: 0 1rem; }
+  .section-header { display: flex; align-items: center; gap: 12px; font-family: var(--font-heading); font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--text-primary); }
+  .section-header .icon { font-size: 2rem; }
+
+  /* Materials checklist */
+  .checklist { background: var(--bg-card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.5rem; list-style: none; }
+  .check-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--card-border); cursor: pointer; transition: var(--transition); }
+  .check-item:last-child { border-bottom: none; }
+  .check-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--neon-green); cursor: pointer; }
+  .check-item.checked span { text-decoration: line-through; color: var(--neon-green); opacity: 0.7; }
+
+  /* Steps */
+  .step-card { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1.5rem; background: var(--bg-card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 2rem 1.5rem; margin-bottom: 1.5rem; transition: all 0.4s ease; opacity: 0.5; }
+  .step-card.active { border-color: var(--neon-cyan); box-shadow: 0 0 25px rgba(0, 229, 255, 0.15); opacity: 1; transform: scale(1.02); z-index: 2; position: relative; }
+  .step-card.completed { border-color: rgba(0, 229, 255, 0.4); opacity: 0.85; transform: scale(1); }
+  .step-num { width: 40px; height: 40px; border-radius: 50%; background: rgba(0, 229, 255, 0.05); border: 2px solid var(--card-border); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-family: var(--font-heading); font-weight: bold; flex-shrink: 0; margin-top: 4px; }
+  .step-card.active .step-num { background: var(--neon-cyan); border-color: var(--neon-cyan); color: var(--bg-primary); box-shadow: 0 0 15px var(--neon-cyan); }
+  .step-card.completed .step-num { background: transparent; border-color: var(--neon-cyan); color: var(--neon-cyan); }
+  .step-text { flex: 1; min-width: 200px; font-size: 1.1rem; line-height: 1.8; color: var(--text-secondary); padding-top: 4px; }
+  .step-card.completed .step-text { color: var(--text-primary); }
+  .step-card.active .step-text { color: var(--text-primary); }
+  .done-btn { padding: 8px 20px; border-radius: 30px; font-weight: 500; font-size: 0.9rem; border: 1px solid var(--card-border); color: var(--text-secondary); background: transparent; transition: var(--transition); cursor: pointer; margin-top: 4px; }
+  .done-btn:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+  .step-card.active .done-btn { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+  .step-card.active .done-btn:hover { background: rgba(0, 229, 255, 0.1); }
+  .step-card.completed .done-btn { background: transparent; border-color: var(--neon-cyan); color: var(--neon-cyan); pointer-events: none; opacity: 0.8; }
+
+  /* Science & Safety */
+  .info-box { background: var(--bg-card); border-left: 4px solid var(--neon-purple); border-radius: 0 var(--radius) var(--radius) 0; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .info-box p { color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem; }
+  .fun-fact { background: rgba(168, 85, 247, 0.1); border: 1px dashed var(--neon-purple); border-radius: var(--radius-sm); padding: 1rem; font-style: italic; color: var(--text-primary); }
+  .fun-fact strong { color: var(--neon-purple); }
+  .safety-box { background: rgba(255, 170, 0, 0.05); border: 1px solid rgba(255, 170, 0, 0.3); box-shadow: 0 0 15px rgba(255, 170, 0, 0.1); border-radius: var(--radius); padding: 1.5rem; }
+  .safety-box ul { padding-left: 1.5rem; list-style-type: disc; color: var(--text-primary); line-height: 1.6; }
+  .safety-box li { margin-bottom: 0.5rem; }
+  #safetySection .section-header .icon { text-shadow: 0 0 10px rgba(255, 170, 0, 0.5); }
+
+  /* CTA */
+  .cta-section { text-align: center; padding: 2rem 1rem 4rem; }
+  .cta-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; border-radius: 50px; font-size: 1.2rem; font-family: var(--font-heading); font-weight: 600; background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); color: #050b18; box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); border: none; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+  .cta-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(0, 255, 136, 0.5); }
+
+  /* ── Guided Mode Additions ── */
+
+  /* Progress bar sticky header */
+  .guided-progress-bar-wrap {
+    max-width: 800px;
+    margin: 0 auto 1rem;
+    padding: 0 1rem;
+  }
+  .guided-progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .guided-progress-label {
+    font-family: var(--font-heading);
+    font-size: 0.82rem;
+    color: var(--neon-cyan);
+    letter-spacing: 0.5px;
+  }
+  .guided-progress-frac {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+  .guided-progress-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(0, 229, 255, 0.1);
+    overflow: hidden;
+  }
+  .guided-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+  }
+
+
+
+  /* Completion overlay */
+  .guided-complete-section {
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+  .guided-complete-emoji {
+    font-size: 4.5rem;
+    display: inline-block;
+    animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .guided-complete-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 1rem 0 0.5rem;
+  }
+  .guided-complete-sub {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-size: 1.05rem;
+  }
+  .guided-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+  .guided-action-btn {
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    border: 1px solid var(--card-border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    backdrop-filter: blur(10px);
+    transition: all 0.25s ease;
+    cursor: pointer;
+  }
+  .guided-action-btn:hover { border-color: var(--neon-cyan); box-shadow: 0 0 12px rgba(0, 229, 255, 0.15); transform: translateY(-2px); }
+  .guided-action-btn.primary { background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); color: #050b18; border: none; box-shadow: 0 0 16px rgba(0, 255, 136, 0.2); }
+  .guided-action-btn.primary:hover { box-shadow: 0 0 24px rgba(0, 255, 136, 0.4); }
+
+  /* Guided badge for source */
+  .guided-source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 14px;
+    color: var(--neon-purple);
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+  }
+
+  /* Hide any floating bottom right elements from base */
+  .fixed-btn, .chat-toggle { display: none !important; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<script>
+  const theme = localStorage.getItem("scibot-theme");
+  if (theme === "light") document.body.classList.add("light-mode");
+</script>
+
+<div id="experimentContainer" style="display: none;">
+  <!-- Hero -->
+  <div class="detail-hero">
+    <div class="detail-emoji" id="expEmoji">🔬</div>
+    <h1 class="detail-title" id="expTitle">Guided Experiment</h1>
+    <h2 class="detail-curriculum" id="expCurriculum" style="font-size: 1.2rem; color: var(--neon-cyan); margin-bottom: 0.5rem; font-weight: normal;"></h2>
+    <p class="detail-subtitle" style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 1rem;">Perform this experiment step-by-step with guided interaction.</p>
+    <div class="detail-badges" id="expBadges"></div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="quick-stats">
+    <div class="stat-card" style="cursor: pointer;" onclick="document.getElementById('stepsContainer').scrollIntoView({behavior: 'smooth', block: 'start'})">
+      <div class="stat-label">📋 Steps Progress</div>
+      <div class="stat-value" id="statSteps"></div>
+    </div>
+    <div class="stat-card" style="cursor: pointer;" onclick="document.getElementById('materialsSection').scrollIntoView({behavior: 'smooth', block: 'start'})">
+      <div class="stat-label">🧪 Materials</div>
+      <div class="stat-value" id="statMaterials"></div>
+    </div>
+    <div class="stat-card" style="cursor: pointer;" onclick="document.getElementById('scienceSection').scrollIntoView({behavior: 'smooth', block: 'start'})">
+      <div class="stat-label">🔬 Science</div>
+      <div class="stat-value" style="font-size: 0.95rem; margin-top: 0.8rem; color: var(--neon-purple);">Learn Why It Works</div>
+    </div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="guided-progress-bar-wrap">
+    <div class="guided-progress-info">
+      <span class="guided-progress-label" id="progressLabel">Step 1</span>
+      <span class="guided-progress-frac" id="progressFrac">1 / ?</span>
+    </div>
+    <div class="guided-progress-track">
+      <div class="guided-progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <!-- Materials -->
+  <div class="content-section" id="materialsSection">
+    <h2 class="section-header"><span class="icon">🧪</span> Gather Your Materials</h2>
+    <ul class="checklist" id="materialsList"></ul>
+  </div>
+
+  <!-- Steps -->
+  <div class="content-section">
+    <h2 class="section-header"><span class="icon">📋</span> Step-by-Step Instructions</h2>
+    <div id="stepsContainer"></div>
+  </div>
+
+
+
+  <!-- Science Explained -->
+  <div class="content-section" id="scienceSection">
+    <h2 class="section-header"><span class="icon">🔬</span> The Science Explained</h2>
+    <div class="info-box">
+      <p id="scienceText"></p>
+    </div>
+  </div>
+
+  <!-- Safety -->
+  <div class="content-section" id="safetySection">
+    <h2 class="section-header"><span class="icon">⚠️</span> Safety Precautions</h2>
+    <div class="safety-box">
+      <ul id="safetyList"></ul>
+    </div>
+  </div>
+
+
+
+  <!-- Completion (hidden until all steps done) -->
+  <div class="guided-complete-section" id="completeSection" style="display:none;">
+    <div class="guided-complete-emoji">🎉</div>
+    <h2 class="guided-complete-title">Experiment Complete!</h2>
+    <p class="guided-complete-sub">Great job, future scientist! You've finished all the steps.</p>
+    <div class="guided-actions">
+      <button class="guided-action-btn primary" id="actionAskWhy">🔬 Ask SciBot why this works</button>
+      <button class="guided-action-btn" id="actionNewExp">🧪 Try another experiment</button>
+      <button class="guided-action-btn" id="actionRestart">🔄 Restart this experiment</button>
+    </div>
+  </div>
+</div>
+
+<div id="errorState" style="display: none; text-align: center; padding: 4rem;">
+  <h2>No Experiment Data Found</h2>
+  <p>Please start a guided experiment from the chatbot.</p>
+  <a href="/" class="neon-btn" style="display: inline-flex; margin-top: 1rem;">← Back to SciBot</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const raw = sessionStorage.getItem("scibot-guided-experiment");
+  const container = document.getElementById("experimentContainer");
+  const errorState = document.getElementById("errorState");
+
+  if (!raw) { errorState.style.display = "block"; return; }
+
+  let exp;
+  try { exp = JSON.parse(raw); } catch (e) { errorState.style.display = "block"; return; }
+
+  const steps = exp.steps || [];
+  if (steps.length === 0) { errorState.style.display = "block"; return; }
+
+  container.style.display = "block";
+
+  // ── 1. Hero ──
+  document.getElementById("expEmoji").textContent = exp.emoji || "🔬";
+  document.getElementById("expTitle").textContent = exp.name || "Guided Experiment";
+  
+  const curriculumEl = document.getElementById("expCurriculum");
+  if (exp.category) {
+    curriculumEl.textContent = `📘 ${exp.category}`;
+  } else {
+    curriculumEl.style.display = "none";
+  }
+
+  const badges = [];
+  if (exp.difficulty) badges.push(`<span class="badge badge-${exp.difficulty.toLowerCase()}">${exp.difficulty}</span>`);
+  if (exp.time) badges.push(`<span class="badge" style="border:1px solid var(--card-border); background:var(--bg-card); color:var(--text-primary)">⏱ ${exp.time}</span>`);
+  document.getElementById("expBadges").innerHTML = badges.join("");
+
+  // ── 2. Quick Stats ──
+  const totalSteps = steps.length;
+  document.getElementById("statSteps").textContent = `0 of ${totalSteps} Completed`;
+  const materials = exp.materials || [];
+  const totalMats = materials.length;
+  let readyMats = 0;
+  document.getElementById("statMaterials").textContent = totalMats > 0 ? `0 / ${totalMats} Ready` : "See below";
+
+  // ── 3. Progress ──
+  const progressLabel = document.getElementById("progressLabel");
+  const progressFrac = document.getElementById("progressFrac");
+  const progressFill = document.getElementById("progressFill");
+  const statProgress = document.getElementById("statProgress");
+
+  let completedSteps = new Set();
+
+  function updateProgress() {
+    const done = completedSteps.size;
+    const pct = Math.round((done / totalSteps) * 100);
+    progressFill.style.width = `${pct}%`;
+    document.getElementById("statSteps").textContent = `${done} of ${totalSteps} Completed`;
+  }
+
+  // ── 4. Materials Checklist ──
+  const materialsList = document.getElementById("materialsList");
+  const materialsSection = document.getElementById("materialsSection");
+  if (materials.length > 0) {
+    materials.forEach((mat, idx) => {
+      const li = document.createElement("li");
+      li.className = "check-item";
+      li.innerHTML = `
+        <input type="checkbox" id="mat-${idx}">
+        <label for="mat-${idx}" style="cursor: pointer; flex: 1;"><span>${mat}</span></label>
+      `;
+      const cb = li.querySelector("input");
+      cb.addEventListener("change", () => {
+        li.classList.toggle("checked", cb.checked);
+        readyMats += cb.checked ? 1 : -1;
+        document.getElementById("statMaterials").textContent = `${readyMats} / ${totalMats} Ready`;
+      });
+      materialsList.appendChild(li);
+    });
+  } else {
+    materialsList.innerHTML = `<li class="check-item" style="justify-content:center;color:var(--text-muted);cursor:default;border:none;">Materials parsed from chatbot response. Refer to chat history for specific quantities.</li>`;
+  }
+
+  // ── 5. Steps ──
+  const stepsContainer = document.getElementById("stepsContainer");
+
+  steps.forEach((step, idx) => {
+    const card = document.createElement("div");
+    card.className = `step-card ${idx === 0 ? "active" : ""}`;
+    card.id = `step-card-${idx}`;
+    card.innerHTML = `
+      <div class="step-num">${idx + 1}</div>
+      <div class="step-text">${step}</div>
+      <button class="done-btn" data-idx="${idx}">✓ Done</button>
+    `;
+    stepsContainer.appendChild(card);
+  });
+
+  // Initial progress
+  progressLabel.textContent = "Step 1";
+  progressFrac.textContent = `1 / ${totalSteps}`;
+  progressFill.style.width = `${(1 / totalSteps) * 100}%`;
+
+  // Step completion logic
+  document.querySelectorAll(".done-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const idx = parseInt(this.getAttribute("data-idx"));
+      const card = document.getElementById(`step-card-${idx}`);
+
+      card.classList.remove("active");
+      card.classList.add("completed");
+      this.textContent = "✓ Completed";
+      completedSteps.add(idx);
+      updateProgress();
+
+      const nextCard = document.getElementById(`step-card-${idx + 1}`);
+      if (nextCard) {
+        nextCard.classList.add("active");
+        progressLabel.textContent = `Step ${idx + 2}`;
+        progressFrac.textContent = `${idx + 2} / ${totalSteps}`;
+        nextCard.scrollIntoView({ behavior: "smooth", block: "center" });
+
+
+      }
+
+      // All done
+      if (completedSteps.size === totalSteps) {
+        showCompletion();
+      }
+    });
+  });
+
+
+
+  // ── 7. Science ──
+  const scienceSection = document.getElementById("scienceSection");
+  if (exp.science && exp.science.trim().length > 0) {
+    // Render markdown to support proper paragraph breaks and bold highlights
+    const htmlContent = typeof renderMarkdown === 'function' ? renderMarkdown(exp.science) : exp.science.replace(/\n/g, "<br>");
+    document.getElementById("scienceText").innerHTML = htmlContent;
+  } else {
+    document.getElementById("scienceText").innerHTML = `<span style="color:var(--text-muted); font-style: italic;">Science explanation unavailable for this experiment.</span>`;
+  }
+
+  // ── 8. Safety ──
+  const safetySection = document.getElementById("safetySection");
+  const safetyList = document.getElementById("safetyList");
+  const safetyTips = exp.safety && exp.safety.length > 0
+    ? exp.safety
+    : ["Always have adult supervision.", "Wash your hands after the experiment."];
+  safetyTips.forEach(tip => {
+    const li = document.createElement("li");
+    li.textContent = tip;
+    safetyList.appendChild(li);
+  });
+
+
+
+  // ── Completion ──
+  function showCompletion() {
+    document.getElementById("completeSection").style.display = "block";
+    progressLabel.textContent = "All Done!";
+    progressFrac.textContent = `${totalSteps} / ${totalSteps}`;
+    progressFill.style.width = "100%";
+    document.getElementById("completeSection").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  document.getElementById("actionAskWhy").addEventListener("click", () => {
+    const name = exp.name || "this experiment";
+    sessionStorage.setItem("scibot-prefill", `Why does the ${name} experiment work? Explain the science behind it.`);
+    window.location.href = "/";
+  });
+
+  document.getElementById("actionNewExp").addEventListener("click", () => {
+    window.location.href = "/";
+  });
+
+  document.getElementById("actionRestart").addEventListener("click", () => {
+    completedSteps.clear();
+    document.querySelectorAll(".step-card").forEach((card, i) => {
+      card.classList.remove("completed", "active");
+      if (i === 0) card.classList.add("active");
+      const btn = card.querySelector(".done-btn");
+      if (btn) btn.textContent = "✓ Done";
+    });
+    progressLabel.textContent = "Step 1";
+    progressFrac.textContent = `1 / ${totalSteps}`;
+    updateProgress();
+    progressFill.style.width = `${(1 / totalSteps) * 100}%`;
+    document.getElementById("completeSection").style.display = "none";
+    document.querySelector(".detail-hero").scrollIntoView({ behavior: "smooth" });
+  });
+
+
+});
+</script>
+{% endblock %}

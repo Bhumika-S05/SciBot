@@ -4,10 +4,10 @@ SciBot is a full-stack AI-powered web application designed to recommend, explain
 
 ## 🚀 Features
 
-### 1. Personalized Chatbot (`/`)
+### 1. Personalized Chatbot (`/`) & Session History
+- **Session Sidebar:** Features a persistent sidebar that saves recent chat sessions (locally). Users can effortlessly switch between past conversations or start new ones.
 - **Optional Preferences:** Features a clean, non-intrusive "Optional Preferences" bar above the chat. Users can select their **Grade Level** (6-8, 9-10, 11-12, or College) and **Subject Interest** (Physics, Chemistry, Biology) at any time.
-- **Dynamic AI Context:** When preferences are selected, SciBot automatically adjusts its response complexity and subject focus to match the user's academic level and interests.
-- **Session-Based State:** Preferences are session-based and reset on page refresh, ensuring a flexible and lightweight user experience.
+- **Adaptive Difficulty Intelligence:** The AI automatically maps user grades to explicit pedagogical profiles (Beginner, Intermediate, Advanced), adjusting terminology, procedural complexity, and analogy depth accordingly. 
 - **Real-Time Streaming:** Streams responses seamlessly from the **Groq API** using the `llama-3.3-70b-versatile` model.
 - **Dynamic UI:** Features a chat window that auto-expands, distinct user/bot bubbles, glowing inputs, and a sticky navigation bar for easy access.
 
@@ -15,15 +15,20 @@ SciBot is a full-stack AI-powered web application designed to recommend, explain
 - **Curated Grid:** A visually appealing grid of curated science experiments with category-coded glowing borders.
 - **Interactive Cards:** Hover animations, emoji scaling, and category/difficulty badges.
 - **Dedicated Detail Page:** Clicking an explorer card opens a rich, interactive detail page (`/experiment/<id>`) in a new tab.
-- **Detail Features:** Includes a materials checklist, step-by-step guided instructions, safety protocols, and a scientific explanation section. Features a "Ask SciBot about this" button that pre-fills the chatbot with relevant questions.
 
-### 3. Ingredient Lab (`/ingredient-lab`)
+### 3. Immersive Guided Mode (`/guided-experiment`)
+- **Actionable Chat:** When the Chatbot generates a full experiment, a "▶ Start Guided Mode" button automatically injects into the UI.
+- **Step-by-Step UI:** Opens a beautiful, dedicated tab that extracts and parses the AI's response into an interactive checklist.
+- **Progress Tracking:** Interactive "✓ Done" buttons track completion percentage with a satisfying sticky progress bar.
+- **Resilient Parsing Engine:** Robust frontend regex parsing correctly structures generic AI Markdown into materials, safety, and step-by-step arrays, handling varied list formats gracefully.
+
+### 4. Ingredient Lab (`/ingredient-lab`)
 - **Animated Beaker:** Playful, pure-CSS animated bubbling beaker illustration.
-- **Multi-Experiment Carousel:** Generates exactly **4 creative experiments** based on materials you have at home.
+- **Multi-Experiment Carousel:** Generates exactly **4 creative, non-repetitive experiments** based on materials you have at home.
 - **Shuffle UI:** Features a bottom shuffle bar with a "Next Experiment" button and interactive indicator dots to cycle through generated suggestions.
 
 ## 🎨 UI/UX Highlights
-- **Light/Dark Theme Toggle:** Persistent theme switching via the 🌙 / ☀️ navbar icon (preferences saved in `localStorage`).
+- **Cross-Tab Theme Synchronization:** Persistent theme switching via the 🌙 / ☀️ navbar icon. Changes trigger `storage` events, updating all open SciBot tabs in real-time.
 - **Inline Preferences:** Easily editable dropdowns for grade and subject that immediately affect future AI responses.
 - **Sticky Navigation:** The global navbar remains visible during scroll for superior navigation.
 - **Glassmorphism Aesthetic:** Deep navy backgrounds, neon accents, and frosted glass effects across all modals and headers.
@@ -33,7 +38,7 @@ SciBot is a full-stack AI-powered web application designed to recommend, explain
 - **Backend:** Python, Flask
 - **Frontend:** HTML5, Vanilla JavaScript, Custom CSS (Vanilla)
 - **AI Integration:** Groq Python SDK (Model: `llama-3.3-70b-versatile`)
-- **State Management:** `localStorage` for themes/profiles, `sessionStorage` for cross-page data transfer.
+- **State Management:** `localStorage` for themes/sessions, `sessionStorage` for cross-page payload data.
 
 ## 📂 Project Structure
 

@@ -369,6 +369,34 @@ input, textarea { font-family: inherit; color: inherit; }
   font-size: 0.85rem;
 }
 
+/* Guided Mode Button (inside chat bubble) */
+.guided-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  letter-spacing: 0.03em;
+  color: #050b18;
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+  transition: all 0.3s ease;
+  animation: fadeSlideUp 0.4s ease;
+}
+.guided-mode-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.35);
+}
+.guided-mode-btn:active {
+  transform: scale(0.96);
+}
+
 /* Typing indicator */
 .typing-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-secondary); }
 .typing-indicator .dot {

@@ -24,6 +24,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ─── Cross-Tab Theme Sync ───
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'scibot-theme') {
+      if (e.newValue === 'light') {
+        document.body.classList.add("light-mode");
+        if(themeToggle) themeToggle.textContent = "☀️";
+      } else {
+        document.body.classList.remove("light-mode");
+        if(themeToggle) themeToggle.textContent = "🌙";
+      }
+    }
+  });
+
   // ─── Button Ripple Effect ───
   document.querySelectorAll("button").forEach(btn => {
     btn.addEventListener("click", function(e) {
@@ -293,7 +306,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Replay messages
       for (const msg of history) {
-        appendMessage(msg.role === "assistant" ? "bot" : msg.role, msg.content);
+        const role = msg.role === "assistant" ? "bot" : msg.role;
+        const result = appendMessage(role, msg.content, role === "bot");
+        if (role === "bot" && result) maybeInjectGuidedButton(msg.content, result.wrapper);
       }
 
       // Hide hero on restored sessions with messages
@@ -343,10 +358,12 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>`;
       chatWindow.appendChild(welcomeMsg);
 
-      // Show hero section again
+      // Show hero section again with all animation states reset
       const heroSection = document.querySelector(".hero-section");
       if (heroSection) {
-        heroSection.style.display = "";
+        heroSection.style.display = "block";
+        // Force reflow to ensure transitions work on next hide
+        void heroSection.offsetWidth;
         heroSection.style.opacity = "1";
         heroSection.style.transform = "translateY(0)";
       }
@@ -401,7 +418,9 @@ document.addEventListener("DOMContentLoaded", () => {
         history = [...active.messages];
         // Replay messages into chat window
         for (const msg of history) {
-          appendMessage(msg.role === "assistant" ? "bot" : msg.role, msg.content);
+          const role = msg.role === "assistant" ? "bot" : msg.role;
+          const result = appendMessage(role, msg.content, role === "bot");
+          if (role === "bot" && result) maybeInjectGuidedButton(msg.content, result.wrapper);
         }
         // Hide hero
         const heroSection = document.querySelector(".hero-section");
@@ -485,7 +504,20 @@ document.addEventListener("DOMContentLoaded", () => {
       // Show typing indicator
       const typing = createTypingIndicator();
       chatWindow.appendChild(typing);
-      scrollChat();
+      
+      // Auto-hide hero section and expand chat (migrated from inline script)
+      const heroSection = document.querySelector(".hero-section");
+      if (heroSection && heroSection.style.display !== "none") {
+        heroSection.style.transition = "all 0.4s ease";
+        heroSection.style.opacity = "0";
+        heroSection.style.transform = "translateY(-20px)";
+        setTimeout(() => { 
+          heroSection.style.display = "none"; 
+          scrollChat(); // ensure scroll happens after layout shift
+        }, 400);
+      } else {
+        scrollChat();
+      }
 
       // Read config
       const temperature = parseFloat(document.getElementById("tempSlider")?.value ?? 0.7);
@@ -548,6 +580,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // Save session to history after each bot reply
         saveCurrentSession();
 
+        // ── Guided Mode: detect full experiment responses ──
+        maybeInjectGuidedButton(fullReply, wrapper);
+
         // Maybe nudge user to set preferences (only if not set, only once)
         maybeShowNudge();
 
@@ -593,6 +628,152 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function scrollChat() { if (chatWindow) chatWindow.scrollTop = chatWindow.scrollHeight; }
+
+  // ── Guided Mode: parse experiment from bot reply and inject button ──
+  function parseExperimentFromReply(text) {
+    // Normalize: collapse \r\n to \n
+    const normalized = text.replace(/\r\n/g, "\n");
+
+    // Try multiple regex patterns for numbered steps (LLMs vary their format)
+    const patterns = [
+      /^\s*\*{0,2}\d+[\.\)]\*{0,2}\s+\S.+/gm,           // "1. text", "**1.** text"
+      /^\s*\*{0,2}[Ss]tep\s+\d+[:\.\)]\*{0,2}\s+\S.+/gm, // "Step 1: text", "**Step 1:** text"
+      /^\s*\*\*\d+\..+?\*\*/gm,                            // "**1. Place the bottle**"
+    ];
+
+    let bestMatches = null;
+    for (const pat of patterns) {
+      const matches = normalized.match(pat);
+      if (matches && matches.length >= 3) {
+        if (!bestMatches || matches.length > bestMatches.length) {
+          bestMatches = matches;
+        }
+      }
+    }
+
+    if (!bestMatches) return null;
+
+    // Clean step text: strip numbering, bold markers, "Step N:" prefix, leading whitespace
+    const steps = bestMatches.map(s =>
+      s.replace(/^\s*\*{0,2}(?:[Ss]tep\s+)?\d+[\.\):\s]\*{0,2}\s*/i, "")
+       .replace(/\*{1,2}/g, "")
+       .trim()
+    ).filter(s => s.length > 3);
+
+    if (steps.length < 3) return null;
+
+    // Try to extract experiment name
+    let name = "Guided Experiment";
+
+    // Pattern 1: "**Experiment Name:** Volcano Eruption" or "**Experiment:** Volcano Eruption"
+    const namedMatch = normalized.match(/\*{0,2}(?:Experiment(?:\s*(?:Name|Title))?|Name|Title)\s*[:\-]\s*\*{0,2}\s*(.+)/im);
+    
+    // Comprehensive blocklist of generic section headers
+    const sectionLabels = /^(experiment\s*name|name|title|materials?\s*(needed|required|list)?|you\s*will\s*need|what\s*you\s*need|steps?|instructions?|procedure|safety\s*(precautions?|tips)?|science|scientific|theoretical|background|introduction|explanation|concept|how\s*it\s*works|what\s*happens|result|observation|note|warning|tip|important|required|optional|setup|preparation|conclusion|summary|follow[\s-]*up|cbse|relevance|curriculum|subject|class|grade|difficulty|time|duration|overview|objective|aim|goal)/i;
+    
+    // Pattern 2: First markdown heading that isn't a section label
+    const headings = [...normalized.matchAll(/^#{1,4}\s+(.+)/gm)].map(m => m[1].replace(/\*{1,2}/g, "").trim());
+    const validHeading = headings.find(h => !sectionLabels.test(h) && h.length > 3);
+
+    // Pattern 3: First bold text that isn't a section label
+    const boldTexts = [...normalized.matchAll(/\*\*([^*]{3,80})\*\*/g)].map(m => m[1].trim());
+    const meaningfulBold = boldTexts.find(t => !sectionLabels.test(t) && t.length > 4);
+
+    if (namedMatch) {
+      name = namedMatch[1].replace(/\*{1,2}/g, "").trim();
+    } else if (validHeading) {
+      name = validHeading;
+    } else if (meaningfulBold) {
+      name = meaningfulBold;
+    }
+
+    // Clean trailing colons/dashes/punctuation
+    name = name.replace(/[:\-–!]+$/, "").trim();
+    // Final fallback
+    if (sectionLabels.test(name) || name.length < 4) name = "Guided Experiment";
+
+    // ── Extract materials ──
+    const materials = [];
+    // Split on any "Materials" header variant
+    const matSplit = normalized.split(/\*{0,2}\s*(?:required\s+)?materials?\s*(?:needed|required|list)?\s*:?\s*\*{0,2}/i);
+    if (!matSplit[1]) {
+      // Try "You will need" / "What you need"
+      const altSplit = normalized.split(/\*{0,2}\s*(?:you\s*will\s*need|what\s*you(?:'ll)?\s*need)\s*:?\s*\*{0,2}/i);
+      if (altSplit[1]) matSplit[1] = altSplit[1];
+    }
+    if (matSplit[1]) {
+      // Get text until the next section header
+      const matBlock = matSplit[1].split(/\n\s*\*{2}[A-Za-z]|\n\s*#{1,4}\s|\n\s*\*{0,2}(?:Step|Instruction|Procedure|Safety)/i)[0];
+      
+      // Process line by line, accepting text with or without bullets
+      const lines = matBlock.split('\n');
+      lines.forEach(l => {
+        const cleaned = l.replace(/^\s*[-•●▪*]\s+/, "")
+                         .replace(/^\s*\d+[\.\)]\s+/, "")
+                         .replace(/\*{1,2}/g, "")
+                         .trim();
+        // Ignore very short strings or lines that are just section labels
+        if (cleaned.length > 1 && !sectionLabels.test(cleaned)) {
+          materials.push(cleaned);
+        }
+      });
+
+      // Fallback for comma-separated lists
+      if (materials.length <= 1 && matBlock.includes(',')) {
+        materials.length = 0; // reset
+        matBlock.split(',').forEach(s => {
+          const cleaned = s.replace(/\*{1,2}/g, "").replace(/\n/g, "").trim();
+          if (cleaned.length > 1 && !sectionLabels.test(cleaned)) materials.push(cleaned);
+        });
+      }
+    }
+
+    // ── Extract safety precautions ──
+    const safety = [];
+    const safetySplit = normalized.split(/\*{0,2}\s*safety\s*(?:precautions?|tips?|notes?)?\s*:?\s*\*{0,2}/i);
+    if (safetySplit[1]) {
+      const safetyBlock = safetySplit[1].split(/\n\s*\*{2}[A-Za-z]|\n\s*#{1,4}\s/)[0];
+      const lines = safetyBlock.split('\n');
+      lines.forEach(l => {
+        const cleaned = l.replace(/^\s*[-•●▪*]\s+/, "")
+                         .replace(/^\s*\d+[\.\)]\s+/, "")
+                         .replace(/\*{1,2}/g, "")
+                         .trim();
+        if (cleaned.length > 3 && !sectionLabels.test(cleaned)) safety.push(cleaned);
+      });
+    }
+
+    // ── Extract science explanation ──
+    let science = "";
+    const sciRegex = /\*{0,2}\s*(?:(?:the\s+)?scien(?:ce|tific)\s*(?:explanation|concept|principle|behind\s*(?:it|this))?|why\s*this\s*works|explanation)\s*:?\s*\*{0,2}/i;
+    const sciSplit = normalized.split(sciRegex);
+    
+    if (sciSplit[1]) {
+      const sciBlock = sciSplit[1].split(/\n\s*\*{2}[A-Za-z]|\n\s*#{1,4}\s|\n\s*---/)[0];
+      // Preserve newlines but trim outer whitespace. 
+      // Do not strip asterisks here, so markdown renderer can handle bold/italics.
+      science = sciBlock.trim();
+    }
+
+    return { name, emoji: "🔬", category: "", difficulty: "", time: "", steps, materials, safety, science };
+  }
+
+  function maybeInjectGuidedButton(fullReply, msgWrapper) {
+    const expData = parseExperimentFromReply(fullReply);
+    if (!expData) return;
+
+    const btn = document.createElement("button");
+    btn.className = "guided-mode-btn";
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14"><polygon points="5,3 19,12 5,21" fill="currentColor"/></svg> Start Guided Mode`;
+    btn.addEventListener("click", () => {
+      sessionStorage.setItem("scibot-guided-experiment", JSON.stringify(expData));
+      window.open("/guided-experiment", "_blank");
+    });
+
+    const bubble = msgWrapper.querySelector(".msg-bubble");
+    if (bubble) bubble.appendChild(btn);
+    scrollChat();
+  }
 
   // ── Minimal Markdown renderer ──
   function renderMarkdown(md) {

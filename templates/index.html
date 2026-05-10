@@ -98,23 +98,8 @@
     const footer = document.getElementById("siteFooter");
     if (footer) footer.remove();
 
-    // Hide hero section on first message
-    const chatForm   = document.getElementById("chatForm");
-    const heroSection = document.querySelector(".hero-section");
-    let isFirstMessage = true;
-
-    if (chatForm && heroSection) {
-      chatForm.addEventListener("submit", () => {
-        const input = document.getElementById("chatInput");
-        if (isFirstMessage && input.value.trim() !== "") {
-          isFirstMessage = false;
-          heroSection.style.transition = "all 0.4s ease";
-          heroSection.style.opacity = "0";
-          heroSection.style.transform = "translateY(-20px)";
-          setTimeout(() => { heroSection.style.display = "none"; }, 400);
-        }
-      });
-    }
+    // The hero hiding logic has been migrated entirely to main.js
+    // to properly handle session resets without caching 'isFirstMessage'
 
     // ── Context State (sessionStorage — resets on full page refresh) ──
     const gradeSelect   = document.getElementById("gradeSelect");
