@@ -12,7 +12,7 @@ SciBot is a full-stack AI-powered web application designed to recommend, explain
 - **Dynamic UI:** Features a chat window that auto-expands, distinct user/bot bubbles, glowing inputs, and a sticky navigation bar for easy access.
 
 ### 2. Experiment Explorer & Detail Pages (`/explorer`)
-- **Curated Grid:** A visually appealing grid of curated science experiments with category-coded glowing borders.
+- **Expanded Curated Grid:** A visually appealing grid of **20 fully detailed science experiments** spanning Physics, Chemistry, Biology, and Earth Science.
 - **Interactive Cards:** Hover animations, emoji scaling, and category/difficulty badges.
 - **Dedicated Detail Page:** Clicking an explorer card opens a rich, interactive detail page (`/experiment/<id>`) in a new tab.
 

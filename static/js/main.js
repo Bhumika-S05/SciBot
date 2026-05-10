@@ -1004,6 +1004,111 @@ document.addEventListener("DOMContentLoaded", () => {
         funFact:"The same fermentation process used in this experiment is what makes bread rise, beer ferment, and yogurt form — humans have been harnessing yeast for over 5,000 years!",
         safety:["Use warm, not hot, water — temperatures above 45°C kill yeast and ruin the experiment.","Do not inhale directly from the balloon; the CO₂ concentration inside can cause dizziness.","Clean up immediately after the experiment as yeast mixtures can develop a strong odour if left out."]
       },
+      { name:"Electromagnetic Induction", emoji:"🧲", category:"Physics", difficulty:"Advanced", time:"45 min",
+        materials:["Copper wire (insulated)","Strong neodymium magnet","Empty cardboard tube","Small LED bulb or galvanometer"],
+        steps:["Coil wire around tube leaving ends free.","Scrape insulation off ends.","Connect ends to LED/galvanometer.","Rapidly move magnet in and out of the tube."],
+        detailedSteps:[
+          "Wind the copper wire tightly around the cardboard tube at least 100-200 times. Leave about 10 cm of wire loose at both ends.",
+          "Use sandpaper or scissors to scrape the insulation off the last 2 cm of both wire ends.",
+          "Connect these bare ends to the two terminals of the LED bulb or galvanometer.",
+          "Rapidly plunge the neodymium magnet in and out of the tube. Watch the LED flash or the meter needle jump!"
+        ],
+        science:"Moving a magnetic field through a conductive coil induces an electric current (Faraday's Law of Induction).",
+        funFact:"This exact same principle is how almost all the world's electricity is generated, whether from wind turbines, hydro dams, or nuclear power plants!",
+        safety:["Neodymium magnets are very strong—keep them away from electronics and pacemakers.","Do not let strong magnets snap together as they may chip and shatter."]
+      },
+      { name:"DIY Electric Motor", emoji:"⚙️", category:"Physics", difficulty:"Advanced", time:"40 min",
+        materials:["D-cell battery","Copper wire (insulated)","Small neodymium magnet","2 paperclips","Rubber band"],
+        steps:["Wrap wire into a small circular coil.","Strip insulation (fully on one end, half on the other).","Attach paperclips to battery ends.","Place magnet on battery and rest coil in paperclips."],
+        detailedSteps:[
+          "Wrap the copper wire 10-15 times around a small cylindrical object (like a battery) to create a neat coil. Leave 5 cm of straight wire extending from opposite sides.",
+          "Strip ALL insulation from one straight end, but ONLY HALF the insulation from the other straight end. This is crucial as it acts as a commutator.",
+          "Use the rubber band to attach a paperclip to both the positive and negative ends of the D-cell battery so they stand upright like posts.",
+          "Place the magnet on the side of the battery between the paperclips. Rest the coil ends in the paperclip loops and give it a gentle flick to start the motor spinning!"
+        ],
+        science:"The interaction between the permanent magnetic field and the temporary magnetic field created by the current running through the coil generates torque (Lorentz force), causing it to spin.",
+        funFact:"The first simple DC electric motor was invented in 1821 by Michael Faraday, paving the way for the electric cars we see today!",
+        safety:["The wire can get hot if left connected too long.","Remove the coil when not actively observing to prevent short circuits."]
+      },
+      { name:"Hydraulic Lift Model", emoji:"🏗️", category:"Physics", difficulty:"Intermediate", time:"30 min",
+        materials:["Two plastic syringes (different sizes)","Plastic tubing","Water","Small cardboard box"],
+        steps:["Fill the smaller syringe with water.","Attach tubing to both syringes.","Push the small plunger to lift the large plunger.","Attach platform to large plunger."],
+        detailedSteps:[
+          "Fill the smaller syringe completely with water.",
+          "Attach one end of the plastic tubing to the nozzle of the small syringe, and the other end to the nozzle of the empty larger syringe. Make sure there are no air bubbles in the tube.",
+          "Glue or tape a small cardboard platform to the top of the large syringe's plunger.",
+          "Push down on the small syringe's plunger. Notice how you have to push further, but it is very easy to lift heavier weights placed on the platform of the large syringe!"
+        ],
+        science:"Pascal's Principle states that pressure applied to an enclosed fluid is transmitted undiminished in all directions. A small force applied over a small area results in a larger force over a larger area.",
+        funFact:"This is the exact same concept used in car brakes and the massive hydraulic arms of construction excavators!",
+        safety:["Do not force the plungers if they get stuck, as the tubing can pop off and spray water.","Perform over a tray to catch any accidental leaks."]
+      },
+      { name:"Electrolysis of Water", emoji:"⚗️", category:"Chemistry", difficulty:"Advanced", time:"50 min",
+        materials:["9V battery","Two pencils (sharpened both ends)","Glass of water","Salt","Cardboard"],
+        steps:["Dissolve salt in water.","Poke two holes in cardboard and insert pencils.","Attach battery terminals to top pencil leads.","Submerge bottom leads in water."],
+        detailedSteps:[
+          "Fill a glass with warm water and dissolve 2 tablespoons of salt to make it conductive.",
+          "Cut a piece of cardboard to cover the glass and poke two holes in it.",
+          "Sharpen two pencils at both ends to expose the graphite core. Insert them through the cardboard so the bottom ends are submerged in the water.",
+          "Connect a 9V battery to the top exposed graphite ends (using alligator clips or direct contact). You will see bubbles rapidly forming on the submerged graphite tips!"
+        ],
+        science:"Electrical current splits the H₂O molecules into Hydrogen and Oxygen gas. The salt acts as an electrolyte to allow the current to flow through the water.",
+        funFact:"Water electrolysis is used to generate breathable oxygen on the International Space Station!",
+        safety:["Do not use wall outlets; use only 9V batteries.","Perform in a well-ventilated area, as hydrogen gas is flammable.","Wash hands after the experiment."]
+      },
+      { name:"pH Indicator from Red Cabbage", emoji:"🧪", category:"Chemistry", difficulty:"Intermediate", time:"25 min",
+        materials:["Red cabbage leaves","Hot water","Clear cups","Vinegar","Baking soda","Lemon juice"],
+        steps:["Chop cabbage and soak in hot water.","Strain the purple liquid into cups.","Add different household liquids.","Observe vivid color changes."],
+        detailedSteps:[
+          "Chop a few leaves of red cabbage into small pieces and place them in a bowl.",
+          "Ask an adult to pour boiling water over the cabbage and let it sit for 10-15 minutes until the water turns deep purple.",
+          "Strain the liquid into several clear cups.",
+          "Add a few drops of vinegar to one cup, lemon juice to another, and a baking soda solution to a third. Watch the deep purple liquid instantly change to bright pink (acids) or green/blue (bases)!"
+        ],
+        science:"Red cabbage contains a pigment molecule called anthocyanin, which changes shape and color depending on the concentration of hydrogen ions (pH) in the solution.",
+        funFact:"Anthocyanin is the same pigment that makes blueberries blue and autumn leaves turn red!",
+        safety:["Ask an adult to help with boiling water.","Do not drink the indicator solution or the tested chemicals.","Clean up spills quickly as the dye can stain surfaces."]
+      },
+      { name:"Reaction Rate Experiment", emoji:"⏱️", category:"Chemistry", difficulty:"Advanced", time:"35 min",
+        materials:["Effervescent tablets","3 clear glasses","Water (cold, room temp, hot)","Stopwatch"],
+        steps:["Fill glasses with different temperature water.","Drop a tablet in each simultaneously.","Time how long it takes for the tablet to dissolve.","Compare the results."],
+        detailedSteps:[
+          "Fill three clear glasses with exactly the same amount of water: one with ice-cold water, one with room temperature water, and one with hot water.",
+          "Get your stopwatch ready and have three effervescent tablets prepared.",
+          "Drop one tablet into each glass at the exact same time and start the timer.",
+          "Record the time it takes for the bubbling to completely stop in each glass. You'll find the hot water finishes much faster!"
+        ],
+        science:"Increasing the temperature of a solvent increases the kinetic energy of its molecules, causing them to collide more frequently and forcefully with the solute, speeding up the reaction.",
+        funFact:"This is exactly why we keep food in the refrigerator—the cold temperature slows down the chemical reactions of bacteria that cause food to spoil!",
+        safety:["Handle hot water carefully to prevent burns.","Do not seal the containers during the reaction as the built-up gas could cause them to burst."]
+      },
+      { name:"Mini Water Filtration System", emoji:"💧", category:"Environmental Science", difficulty:"Intermediate", time:"30 min",
+        materials:["Empty plastic bottle","Cotton balls","Sand","Gravel","Activated charcoal (optional)","Dirty water"],
+        steps:["Cut bottom off bottle.","Layer cotton, charcoal, sand, and gravel inside.","Pour dirty water through the top.","Collect clean water at the bottom."],
+        detailedSteps:[
+          "Ask an adult to help cut the bottom off the plastic bottle. Turn it upside down (cap off) over a clear glass.",
+          "Stuff cotton balls tightly into the neck of the bottle as the first layer.",
+          "Add a layer of activated charcoal (if available), followed by a thick layer of fine sand, and finally a layer of gravel on top.",
+          "Slowly pour your 'dirty water' (water mixed with dirt or soil) over the gravel. Watch as the water trickles through the layers and drips out surprisingly clear at the bottom!"
+        ],
+        science:"Each layer acts as a physical filter. Gravel traps large debris, sand catches smaller particles, and charcoal absorbs chemical impurities.",
+        funFact:"This mimics how the Earth's natural aquifers filter groundwater as it seeps down through soil and porous rock over hundreds of years!",
+        safety:["The filtered water is NOT safe to drink, as it has not been purified of microscopic bacteria.","Wash your hands after handling soil and dirty water."]
+      },
+      { name:"Greenhouse Effect Model", emoji:"🌍", category:"Earth Science", difficulty:"Advanced", time:"40 min",
+        materials:["Two identical glass jars","Two thermometers","Plastic wrap","Rubber band","Strong lamp or sunlight"],
+        steps:["Place a thermometer in each jar.","Cover one jar tightly with plastic wrap.","Place both in direct sunlight/lamp light.","Record temperatures over 30 minutes."],
+        detailedSteps:[
+          "Place a thermometer inside each of the two glass jars.",
+          "Leave one jar open to the air.",
+          "Cover the mouth of the second jar tightly with clear plastic wrap and secure it with a rubber band.",
+          "Place both jars in a very sunny window or under a strong desk lamp.",
+          "Record the temperature in both jars every 5 minutes for 30 minutes. The covered jar will become noticeably hotter!"
+        ],
+        science:"The plastic wrap allows short-wave light energy to enter the jar, but traps the long-wave heat energy trying to escape. This mimics how greenhouse gases trap heat in Earth's atmosphere.",
+        funFact:"Venus has such an extreme greenhouse effect from its thick CO₂ atmosphere that its surface is hot enough to melt lead!",
+        safety:["Glass jars can become quite hot in direct sunlight; handle with care.","Be careful not to knock over the jars or drop the thermometers."]
+      }
     ];
 
     let activeCategory = "all";
@@ -1225,6 +1330,78 @@ document.addEventListener("DOMContentLoaded", () => {
       steps: ["Mix 2 cups cornstarch with 1 cup water.", "Add food coloring if desired.", "Punch it — it's solid! Pour it — it's liquid!", "Experiment with speed of force."],
       safety: ["Don't pour down the drain — it clogs pipes.", "Clean up with warm water."],
       science: "Cornstarch particles jam together under sudden force, acting solid. Released slowly, they flow as a liquid — a non-Newtonian fluid."
+    },
+    {
+      name: "Electromagnetic Induction", emoji: "🧲", category: "Physics", difficulty: "Advanced",
+      keywords: ["copper wire", "wire", "magnet", "neodymium magnet", "cardboard tube", "tube", "led", "bulb"],
+      description: "Generate electricity by moving a magnet through a coil of wire.",
+      materials: ["Copper wire", "Strong magnet", "Cardboard tube", "LED bulb"],
+      steps: ["Coil wire around tube.", "Scrape insulation off ends.", "Connect to LED.", "Rapidly move magnet in/out of tube."],
+      safety: ["Keep strong magnets away from electronics."],
+      science: "Moving a magnetic field through a conductive coil induces an electric current (Faraday's Law)."
+    },
+    {
+      name: "DIY Electric Motor", emoji: "⚙️", category: "Physics", difficulty: "Advanced",
+      keywords: ["battery", "copper wire", "wire", "magnet", "paperclips", "rubber band"],
+      description: "Build a simple working electric motor using basic household items.",
+      materials: ["D-cell battery", "Copper wire", "Small magnet", "2 paperclips", "Rubber band"],
+      steps: ["Wrap wire into a coil.", "Strip insulation correctly.", "Attach paperclips to battery.", "Place magnet and spin coil."],
+      safety: ["Wire can get hot. Disconnect when not in use."],
+      science: "The interaction between the permanent magnet and the electromagnetic coil generates torque, spinning the motor."
+    },
+    {
+      name: "Hydraulic Lift Model", emoji: "🏗️", category: "Physics", difficulty: "Intermediate",
+      keywords: ["syringes", "syringe", "plastic tubing", "tubing", "water", "cardboard box", "box"],
+      description: "Demonstrate Pascal's principle by building a fluid-powered lift.",
+      materials: ["Two plastic syringes", "Plastic tubing", "Water", "Cardboard box"],
+      steps: ["Fill small syringe with water.", "Attach tubing to both.", "Push small plunger.", "Lift heavier load on large plunger."],
+      safety: ["Don't force stuck plungers to prevent leaks."],
+      science: "Pressure applied to an enclosed fluid is transmitted undiminished, multiplying force over a larger area."
+    },
+    {
+      name: "Electrolysis of Water", emoji: "⚗️", category: "Chemistry", difficulty: "Advanced",
+      keywords: ["battery", "9v battery", "pencils", "pencil", "water", "salt", "cardboard"],
+      description: "Split water into hydrogen and oxygen gas using electricity.",
+      materials: ["9V battery", "Two pencils", "Glass of water", "Salt", "Cardboard"],
+      steps: ["Dissolve salt in water.", "Insert sharpened pencils through cardboard.", "Connect battery to top leads.", "Watch bubbles form."],
+      safety: ["Perform in a ventilated area. Use only 9V batteries."],
+      science: "Electrical current splits H₂O molecules into Hydrogen and Oxygen gas."
+    },
+    {
+      name: "pH Indicator from Red Cabbage", emoji: "🧪", category: "Chemistry", difficulty: "Intermediate",
+      keywords: ["cabbage", "red cabbage", "hot water", "water", "cups", "vinegar", "baking soda", "lemon juice", "lemon"],
+      description: "Make a natural pH indicator to test acids and bases.",
+      materials: ["Red cabbage", "Hot water", "Clear cups", "Vinegar", "Baking soda"],
+      steps: ["Soak chopped cabbage in hot water.", "Strain purple liquid.", "Add different liquids.", "Watch colors change."],
+      safety: ["Careful with boiling water. Do not drink."],
+      science: "Anthocyanin pigment changes shape and color depending on the pH of the solution."
+    },
+    {
+      name: "Reaction Rate Experiment", emoji: "⏱️", category: "Chemistry", difficulty: "Advanced",
+      keywords: ["effervescent tablets", "alka-seltzer", "glasses", "water", "hot water", "cold water", "stopwatch", "timer"],
+      description: "Test how temperature affects the speed of a chemical reaction.",
+      materials: ["Effervescent tablets", "3 clear glasses", "Water at different temps", "Stopwatch"],
+      steps: ["Fill glasses with hot, cold, and room temp water.", "Drop tablets in simultaneously.", "Time the dissolution."],
+      safety: ["Handle hot water safely. Do not seal glasses."],
+      science: "Higher temperature increases molecular kinetic energy and collision frequency, speeding up reactions."
+    },
+    {
+      name: "Mini Water Filtration System", emoji: "💧", category: "Environmental Science", difficulty: "Intermediate",
+      keywords: ["bottle", "plastic bottle", "cotton balls", "cotton", "sand", "gravel", "charcoal", "dirty water", "soil", "dirt"],
+      description: "Build a multi-layer filter to clean muddy water.",
+      materials: ["Plastic bottle", "Cotton balls", "Sand", "Gravel", "Dirty water"],
+      steps: ["Cut bottom off bottle.", "Layer cotton, charcoal, sand, and gravel.", "Pour dirty water through top.", "Collect clear water."],
+      safety: ["Filtered water is not safe to drink without further purification."],
+      science: "Physical filtering layers trap progressively smaller debris, mimicking natural aquifers."
+    },
+    {
+      name: "Greenhouse Effect Model", emoji: "🌍", category: "Earth Science", difficulty: "Advanced",
+      keywords: ["glass jars", "jars", "thermometers", "thermometer", "plastic wrap", "wrap", "rubber band", "lamp", "sunlight"],
+      description: "Model how the Earth's atmosphere traps heat from the sun.",
+      materials: ["Two glass jars", "Two thermometers", "Plastic wrap", "Sunlight or strong lamp"],
+      steps: ["Put thermometers in jars.", "Cover one tightly with plastic wrap.", "Place in sunlight.", "Record temperatures."],
+      safety: ["Jars can get hot in direct sunlight."],
+      science: "Plastic wrap traps long-wave heat energy trying to escape, just like greenhouse gases."
     }
   ];
 
