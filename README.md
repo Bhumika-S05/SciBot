@@ -21,12 +21,11 @@ SciBot is a full-stack AI-powered web application designed to recommend, explain
 - **Animated Beaker:** Playful, pure-CSS animated bubbling beaker illustration.
 - **Multi-Experiment Carousel:** Generates exactly **4 creative experiments** based on materials you have at home.
 - **Shuffle UI:** Features a bottom shuffle bar with a "Next Experiment" button and interactive indicator dots to cycle through generated suggestions.
-- **Sticky Header:** The results header (with the shuffle button and progress counter) stays at the top while you scroll through long instructions.
 
 ## 🎨 UI/UX Highlights
 - **Light/Dark Theme Toggle:** Persistent theme switching via the 🌙 / ☀️ navbar icon (preferences saved in `localStorage`).
 - **Inline Preferences:** Easily editable dropdowns for grade and subject that immediately affect future AI responses.
-- **Sticky Navigation:** Both the global navbar and the Lab results header remain visible during scroll for superior navigation.
+- **Sticky Navigation:** The global navbar remains visible during scroll for superior navigation.
 - **Glassmorphism Aesthetic:** Deep navy backgrounds, neon accents, and frosted glass effects across all modals and headers.
 
 ## 🛠️ Tech Stack

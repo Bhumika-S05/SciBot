@@ -647,9 +647,7 @@ input, textarea { font-family: inherit; color: inherit; }
     justify-content: space-between;
     margin-bottom: 1rem;
     gap: 1rem;
-    position: sticky;
-    top: var(--nav-h);
-    z-index: 50;
+    position: relative;
     background: var(--bg-primary);
     padding: 1rem 0;
     backdrop-filter: blur(10px);

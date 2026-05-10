@@ -210,7 +210,7 @@ def ingredient():
     top_p = float(data.get("top_p", 0.9))
 
     user_prompt = (
-        f"Suggest 3 science experiments I can do with these materials: {materials}"
+        f"Suggest 4 science experiments I can do with these materials: {materials}"
     )
 
     try:
