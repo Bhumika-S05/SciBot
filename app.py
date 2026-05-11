@@ -76,6 +76,9 @@ SYSTEM_PROMPT = (
     "- If user asks 'show me another one' → suggest a completely different, unique experiment "
     "in the same topic/difficulty.\n\n"
 
+    "IMPORTANT CONTEXT RULES:\n"
+    "- If experiment context is provided from Explorer or Ingredient Lab, NEVER deny knowledge of the experiment. Do not ask for clarification or state you don't know it. Use the provided context seamlessly.\n\n"
+
     "REMEMBER: You are a science TEACHER having a CONVERSATION, "
     "not a search engine returning results."
 )
@@ -153,6 +156,7 @@ def chat():
     top_p = float(data.get("top_p", 0.9))
     grade = data.get("grade", "")
     subject = data.get("subject", "")
+    experiment_context = data.get("experiment_context")
 
     # Build messages list — only inject context when user chose preferences
     profile_parts = []
@@ -184,6 +188,20 @@ def chat():
     else:
         # No preferences — behave normally, no forced assumptions
         dynamic_prompt = SYSTEM_PROMPT
+
+    if experiment_context:
+        ctx_str = (
+            f"\n\n=== SHARED EXPERIMENT CONTEXT ===\n"
+            f"The user clicked 'Ask SciBot about this experiment' for the following experiment:\n"
+            f"Name: {experiment_context.get('name', 'Unknown')}\n"
+            f"Category: {experiment_context.get('category', 'Unknown')}\n"
+            f"Difficulty: {experiment_context.get('difficulty', 'Unknown')}\n"
+            f"Materials: {', '.join(experiment_context.get('materials', [])) if isinstance(experiment_context.get('materials'), list) else experiment_context.get('materials', '')}\n"
+            f"Steps: {', '.join(experiment_context.get('steps', [])) if isinstance(experiment_context.get('steps'), list) else experiment_context.get('steps', '')}\n"
+            f"Science Explanation: {experiment_context.get('science', '')}\n"
+            f"==================================="
+        )
+        dynamic_prompt += ctx_str
 
     messages = [{"role": "system", "content": dynamic_prompt}]
     for msg in history:

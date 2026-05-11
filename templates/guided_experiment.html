@@ -244,7 +244,12 @@
     </div>
   </div>
 
-
+  <!-- CTA -->
+  <div class="cta-section">
+    <button class="cta-btn" id="askBotBtn">
+      <span>💬 Ask SciBot about this experiment</span>
+    </button>
+  </div>
 
   <!-- Completion (hidden until all steps done) -->
   <div class="guided-complete-section" id="completeSection" style="display:none;">
@@ -427,6 +432,16 @@ document.addEventListener("DOMContentLoaded", () => {
     progressFrac.textContent = `${totalSteps} / ${totalSteps}`;
     progressFill.style.width = "100%";
     document.getElementById("completeSection").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  const askBotBtn = document.getElementById("askBotBtn");
+  if (askBotBtn) {
+    askBotBtn.addEventListener("click", () => {
+      const name = exp.name || "this experiment";
+      sessionStorage.setItem("scibot-prefill", `Tell me more about the ${name} experiment`);
+      sessionStorage.setItem("scibot-context-payload", JSON.stringify(exp));
+      window.location.href = "/";
+    });
   }
 
   document.getElementById("actionAskWhy").addEventListener("click", () => {

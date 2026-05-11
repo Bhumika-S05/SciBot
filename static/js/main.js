@@ -527,17 +527,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const { grade, subject } = getContext();
 
       try {
+        const payload = {
+          message: text,
+          history,
+          temperature,
+          top_p,
+          grade,
+          subject,
+        };
+
+        const rawContext = sessionStorage.getItem("scibot-context-payload");
+        if (rawContext) {
+          try {
+            payload.experiment_context = JSON.parse(rawContext);
+            sessionStorage.removeItem("scibot-context-payload");
+          } catch(e) {
+            console.error(e);
+          }
+        }
+
         const res = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text,
-            history,
-            temperature,
-            top_p,
-            grade,    // empty string when not set
-            subject,  // empty string when not set
-          }),
+          body: JSON.stringify(payload),
         });
 
         // Remove typing indicator
@@ -601,6 +613,12 @@ document.addEventListener("DOMContentLoaded", () => {
       sessionStorage.removeItem("scibot-prefill");
       chatInput.dispatchEvent(new Event("input"));
       chatInput.focus();
+      
+      if (sessionStorage.getItem("scibot-context-payload")) {
+        setTimeout(() => {
+          if (!sendBtn.disabled) chatForm.requestSubmit();
+        }, 300);
+      }
     }
   }
 
@@ -644,23 +662,45 @@ document.addEventListener("DOMContentLoaded", () => {
     let bestMatches = null;
     for (const pat of patterns) {
       const matches = normalized.match(pat);
-      if (matches && matches.length >= 3) {
+      if (matches && matches.length >= 1) {
         if (!bestMatches || matches.length > bestMatches.length) {
           bestMatches = matches;
         }
       }
     }
 
-    if (!bestMatches) return null;
+    const steps = [];
+    if (bestMatches) {
+      // Clean step text: strip numbering, bold markers, "Step N:" prefix, leading whitespace
+      bestMatches.forEach(s => {
+        const clean = s.replace(/^\s*\*{0,2}(?:[Ss]tep\s+)?\d+[\.\):\s]\*{0,2}\s*/i, "")
+         .replace(/\*{1,2}/g, "")
+         .trim();
+        if (clean.length > 3) steps.push(clean);
+      });
+    }
 
-    // Clean step text: strip numbering, bold markers, "Step N:" prefix, leading whitespace
-    const steps = bestMatches.map(s =>
-      s.replace(/^\s*\*{0,2}(?:[Ss]tep\s+)?\d+[\.\):\s]\*{0,2}\s*/i, "")
-       .replace(/\*{1,2}/g, "")
-       .trim()
-    ).filter(s => s.length > 3);
+    // Fallback if regex missed numbered steps or if they were bulleted/un-numbered
+    if (steps.length === 0) {
+      const stepSplit = normalized.split(/\*{0,2}\s*(?:step-by-step\s+)?(?:instructions?|procedure|steps?)\s*:?\s*\*{0,2}/i);
+      if (stepSplit.length > 1) {
+        // take the block after "instructions"
+        const stepBlock = stepSplit[1].split(/\n\s*\*{2}[A-Za-z]|\n\s*#{1,4}\s|\n\s*\*{0,2}(?:Safety|Science|Explanation|Conclusion|The Science)/i)[0];
+        const lines = stepBlock.split('\n');
+        lines.forEach(l => {
+          const cleaned = l.replace(/^\s*[-•●▪*]\s+/, "")
+                           .replace(/^\s*\d+[\.\)]\s+/, "")
+                           .replace(/\*{1,2}/g, "")
+                           .trim();
+          // skip empty or generic label
+          if (cleaned.length > 3 && !/^(experiment\s*name|name|title|materials?|safety|science)/i.test(cleaned)) {
+            steps.push(cleaned);
+          }
+        });
+      }
+    }
 
-    if (steps.length < 3) return null;
+    if (steps.length < 1) return null;
 
     // Try to extract experiment name
     let name = "Guided Experiment";
@@ -1574,10 +1614,6 @@ document.addEventListener("DOMContentLoaded", () => {
         .replace(/^#{1,4}\s*Experiment\s*\d+[:\-]?\s*/i, "")
         .trim();
 
-      // Source badge HTML
-      const badgeClass = resultSource === "curated" ? "source-badge-curated" : "source-badge-ai";
-      const badgeText  = resultSource === "curated" ? "⚡ Curated Recommendation" : "🤖 AI Generated";
-
       cardEl.style.opacity = "0";
       cardEl.style.transform = "translateY(10px)";
 
@@ -1588,7 +1624,6 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="result-card-number">
                 Experiment ${index + 1} of ${total}
               </div>
-              <span class="source-badge ${badgeClass}">${badgeText}</span>
               <div class="exp-dots">
                 ${allExperiments.map((_, i) => `
                   <span class="exp-dot ${i === index ? 'active' : ''}"
@@ -1601,6 +1636,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (counterEl) counterEl.textContent =
           `${index + 1} / ${total}`;
+
+        // Inject Guided Mode button
+        const expData = parseExperimentFromReply(content);
+        if (expData) {
+          const btn = document.createElement("button");
+          btn.className = "guided-mode-btn";
+          btn.style.marginTop = "1rem";
+          btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14"><polygon points="5,3 19,12 5,21" fill="currentColor"/></svg> Start Guided Mode`;
+          btn.addEventListener("click", () => {
+            sessionStorage.setItem("scibot-guided-experiment", JSON.stringify(expData));
+            window.open("/guided-experiment", "_blank");
+          });
+          cardEl.querySelector(".result-card").appendChild(btn);
+        }
 
         const shuffleBtn = document.getElementById("shuffleBtn");
         if (shuffleBtn) {

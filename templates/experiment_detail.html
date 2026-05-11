@@ -448,6 +448,7 @@
       const askBtn = document.getElementById("askBotBtn");
       askBtn.addEventListener("click", () => {
         sessionStorage.setItem("scibot-prefill", `Tell me more about the ${exp.name} experiment`);
+        sessionStorage.setItem("scibot-context-payload", JSON.stringify(exp));
         // We go to home page (chat) in current tab, since we opened detail page in new tab
         window.location.href = "/";
       });
